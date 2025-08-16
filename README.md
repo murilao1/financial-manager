@@ -42,6 +42,36 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## Running on Expo Go from WSL2 (Android/iOS)
+
+If you're running the dev server inside WSL2 and Expo Go on a phone, prefer the tunnel mode:
+
+- Tunnel (most reliable across NAT/VPN):
+
+   ```bash
+   npm run start:tunnel
+   ```
+
+- LAN (same Wi‑Fi, set your Windows host IP):
+
+   ```bash
+   export REACT_NATIVE_PACKAGER_HOSTNAME=192.168.x.x
+   npm run start:lan
+   ```
+
+- Localhost + USB (Android):
+
+   ```bash
+   npm run start:localhost
+   adb reverse tcp:8081 tcp:8081
+   ```
+
+Troubleshooting: keep Expo Go updated, ensure phone and PC are on the same network (for LAN), and clear cache if needed:
+
+```bash
+npm run start:clear
+```
+
 ## Join the community
 
 Join our community of developers creating universal apps.
