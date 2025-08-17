@@ -32,7 +32,12 @@ function useBoxStyle({ gap, p, px, py, pt, pr, pb, pl, style }: CommonProps) {
 
 export function Row(props: CommonProps) {
   const style = useBoxStyle(props);
-  return <View {...props} style={[{ flexDirection: 'row', alignItems: 'center' }, style]} />;
+  return (
+    <View
+      {...props}
+      style={[{ flexDirection: 'row', alignItems: 'center' }, style]}
+    />
+  );
 }
 
 export function Column(props: CommonProps) {

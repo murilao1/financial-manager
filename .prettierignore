@@ -1,0 +1,7 @@
+# Prettier
+# *.js
+# *.ts
+# *.tsx
+# *.json
+*.md
+package*.json

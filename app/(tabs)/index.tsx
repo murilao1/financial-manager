@@ -10,13 +10,11 @@ export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.hero}>
-        <LottieView
-          source={logoLottie}
-          autoPlay
-          loop
-          style={styles.heroLogo}
-        />
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
+        <LottieView source={logoLottie} autoPlay loop style={styles.heroLogo} />
+        <Text
+          variant="headlineMedium"
+          style={[styles.title, { color: theme.colors.primary }]}
+        >
           Banco Simples
         </Text>
         <Text variant="bodyLarge" style={styles.subtitle}>
@@ -24,12 +22,20 @@ export default function HomeScreen() {
         </Text>
         <Row gap={12} style={styles.actions}>
           <Link href="/(tabs)/transactions" asChild>
-            <Button mode="contained" style={styles.button} contentStyle={styles.buttonContent}>
+            <Button
+              mode="contained"
+              style={styles.button}
+              contentStyle={styles.buttonContent}
+            >
               Ir para Transações
             </Button>
           </Link>
           <Link href="/(tabs)/analytics" asChild>
-            <Button mode="outlined" style={styles.button} contentStyle={styles.buttonContent}>
+            <Button
+              mode="outlined"
+              style={styles.button}
+              contentStyle={styles.buttonContent}
+            >
               Ver Análises
             </Button>
           </Link>
@@ -41,7 +47,8 @@ export default function HomeScreen() {
           <Card.Content style={styles.cardContent}>
             <Text variant="titleMedium">Controle de Transações</Text>
             <Text variant="bodyMedium" style={{ marginTop: 6 }}>
-              Adicione, edite e visualize todas as suas transações em um só lugar.
+              Adicione, edite e visualize todas as suas transações em um só
+              lugar.
             </Text>
           </Card.Content>
         </Card>

@@ -1,4 +1,3 @@
-
 import splashLottie from '@/assets/lottie/splash.json';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import LottieView from 'lottie-react-native';
@@ -11,7 +10,7 @@ const { width, height } = Dimensions.get('window');
 export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
   const animation = useRef<LottieView>(null);
   const theme = useTheme();
-  const duration = 1.5 * 1000
+  const duration = 1.5 * 1000;
 
   useEffect(() => {
     ExpoSplashScreen.preventAutoHideAsync();
@@ -24,7 +23,9 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
   }, [onFinish, duration]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <LottieView
         ref={animation}
         source={splashLottie}
