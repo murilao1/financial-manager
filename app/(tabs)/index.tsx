@@ -1,75 +1,106 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { Row } from '@/components/ui/Layout';
+import { Link } from 'expo-router';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Card, Text, useTheme } from 'react-native-paper';
 
 export default function HomeScreen() {
+  const theme = useTheme();
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.hero}>
+        <Image source={require('@/assets/images/icon.png')} style={styles.heroIcon} />
+        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
+          Banco Simples
+        </Text>
+        <Text variant="bodyLarge" style={styles.subtitle}>
+          Seu dinheiro. Sua maneira. Seu controle financeiro simplificado.
+        </Text>
+        <Row gap={12} style={styles.actions}>
+          <Link href="/(tabs)/transactions" asChild>
+            <Button mode="contained" style={styles.button} contentStyle={styles.buttonContent}>
+              Ir para Transações
+            </Button>
+          </Link>
+          <Link href="/(tabs)/analytics" asChild>
+            <Button mode="outlined" style={styles.button} contentStyle={styles.buttonContent}>
+              Ver Análises
+            </Button>
+          </Link>
+        </Row>
+      </View>
+
+      <View style={styles.grid}>
+        <Card style={styles.card}>
+          <Card.Content style={styles.cardContent}>
+            <Text variant="titleMedium">Controle de Transações</Text>
+            <Text variant="bodyMedium" style={{ marginTop: 6 }}>
+              Adicione, edite e visualize todas as suas transações em um só lugar.
+            </Text>
+          </Card.Content>
+        </Card>
+        <Card style={styles.card}>
+          <Card.Content style={styles.cardContent}>
+            <Text variant="titleMedium">Análises Financeiras</Text>
+            <Text variant="bodyMedium" style={{ marginTop: 6 }}>
+              Métricas, tendências mensais e fluxo de caixa ao seu alcance.
+            </Text>
+          </Card.Content>
+        </Card>
+        <Card style={styles.card}>
+          <Card.Content style={styles.cardContent}>
+            <Text variant="titleMedium">Anexos e Categorias</Text>
+            <Text variant="bodyMedium" style={{ marginTop: 6 }}>
+              Upload de comprovantes e categorização inteligente.
+            </Text>
+          </Card.Content>
+        </Card>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    padding: 16,
+    gap: 16,
+  },
+  hero: {
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 24,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontWeight: '700',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subtitle: {
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  actions: {
+    marginTop: 16,
+  },
+  button: {
+    borderRadius: 8,
+  },
+  buttonContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  heroIcon: {
+    width: 80,
+    height: 80,
+    marginBottom: 12,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  card: {
+    flexBasis: '100%',
+  },
+  cardContent: {
+    gap: 4,
   },
 });
