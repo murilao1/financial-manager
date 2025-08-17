@@ -1,6 +1,8 @@
+import logoLottie from '@/assets/lottie/logo.json';
 import { Row } from '@/components/ui/Layout';
 import { Link } from 'expo-router';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import LottieView from 'lottie-react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Text, useTheme } from 'react-native-paper';
 
 export default function HomeScreen() {
@@ -8,7 +10,12 @@ export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.hero}>
-        <Image source={require('@/assets/images/icon.png')} style={styles.heroIcon} />
+        <LottieView
+          source={logoLottie}
+          autoPlay
+          loop
+          style={styles.heroLogo}
+        />
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
           Banco Simples
         </Text>
@@ -61,8 +68,11 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 16,
     gap: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   hero: {
     alignItems: 'center',
@@ -86,9 +96,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  heroIcon: {
-    width: 80,
-    height: 80,
+  heroLogo: {
+    width: 120,
+    height: 120,
     marginBottom: 12,
   },
   grid: {
