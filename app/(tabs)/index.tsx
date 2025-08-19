@@ -43,7 +43,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.grid}>
-        <Card style={styles.card}>
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content style={styles.cardContent}>
             <Text variant="titleMedium">Controle de Transações</Text>
             <Text variant="bodyMedium" style={{ marginTop: 6 }}>
@@ -52,7 +52,7 @@ export default function HomeScreen() {
             </Text>
           </Card.Content>
         </Card>
-        <Card style={styles.card}>
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content style={styles.cardContent}>
             <Text variant="titleMedium">Análises Financeiras</Text>
             <Text variant="bodyMedium" style={{ marginTop: 6 }}>
@@ -60,7 +60,7 @@ export default function HomeScreen() {
             </Text>
           </Card.Content>
         </Card>
-        <Card style={styles.card}>
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content style={styles.cardContent}>
             <Text variant="titleMedium">Anexos e Categorias</Text>
             <Text variant="bodyMedium" style={{ marginTop: 6 }}>
@@ -77,9 +77,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    // paddingBottom: 64,
     gap: 16,
     alignItems: 'center',
-    justifyContent: 'center',
+    // justifyContent: 'center',
   },
   hero: {
     alignItems: 'center',

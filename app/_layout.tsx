@@ -14,6 +14,7 @@ import { PaperProvider } from 'react-native-paper';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  // const theme = useTheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });

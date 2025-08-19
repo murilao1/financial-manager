@@ -18,8 +18,8 @@ export const darkTheme: MD3Theme = {
     ...MD3DarkTheme.colors,
     primary: '#687EDB',
     secondary: '#FF9563',
-    background: '#121212',
-    surface: '#1E1E1E',
+    background: '#232a3d', // azul escuro suave alinhado ao primary
+    surface: '#2e3650', // azul escuro intermediário alinhado ao primary
     onPrimary: '#FFFFFF',
   },
 };
