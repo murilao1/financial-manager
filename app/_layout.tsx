@@ -11,6 +11,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { PaperProvider } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -29,16 +30,18 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <PaperProvider theme={paperTheme}>
-        {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-        {!showSplash && (
-          <>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" hidden />
-          </>
-        )}
+        <SafeAreaProvider>
+          {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+          {!showSplash && (
+            <>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" hidden />
+            </>
+          )}
+        </SafeAreaProvider>
       </PaperProvider>
     </ThemeProvider>
   );

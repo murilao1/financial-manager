@@ -3,7 +3,8 @@ import { Row } from '@/components/ui/Layout';
 import { Link } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Text, useTheme } from 'react-native-paper';
+import { Card, Text, useTheme } from 'react-native-paper';
+import Button from '@/designSystem/Button';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -22,20 +23,12 @@ export default function HomeScreen() {
         </Text>
         <Row gap={12} style={styles.actions}>
           <Link href="/(tabs)/transactions" asChild>
-            <Button
-              mode="contained"
-              style={styles.button}
-              contentStyle={styles.buttonContent}
-            >
+            <Button  mode="contained">
               Ir para Transações
             </Button>
           </Link>
           <Link href="/(tabs)/analytics" asChild>
-            <Button
-              mode="outlined"
-              style={styles.button}
-              contentStyle={styles.buttonContent}
-            >
+            <Button mode="outlined">
               Ver Análises
             </Button>
           </Link>
@@ -96,13 +89,6 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginTop: 16,
-  },
-  button: {
-    borderRadius: 8,
-  },
-  buttonContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
   },
   heroLogo: {
     width: 120,
