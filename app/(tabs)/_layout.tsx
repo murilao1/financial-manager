@@ -17,7 +17,8 @@ export default function TabLayout() {
   // apenas o necessário para flutuar corretamente
   const TABBAR_BASE_HEIGHT = 60;
   const TABBAR_FLOAT_OFFSET = 10;
-  const RESERVED_SPACE = TABBAR_BASE_HEIGHT + insets.bottom + TABBAR_FLOAT_OFFSET;
+  const RESERVED_SPACE =
+    TABBAR_BASE_HEIGHT + insets.bottom + TABBAR_FLOAT_OFFSET;
 
   return (
     <Tabs
