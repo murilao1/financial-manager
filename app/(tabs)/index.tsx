@@ -1,15 +1,23 @@
 import logoLottie from '@/assets/lottie/logo.json';
 import { Row } from '@/components/ui/Layout';
+import Button from '@/designSystem/Button';
+import { auth } from '@/firebase/firebaseConfig';
+import { signOut } from '@firebase/auth';
 import { Link } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
-import Button from '@/designSystem/Button';
 
 export default function HomeScreen() {
   const theme = useTheme();
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.buttonView}>
+        <Pressable onPress={() => signOut(auth)}>
+          <Text style={styles.buttonText}>Sair</Text>
+        </Pressable>
+      </View>
       <View style={styles.hero}>
         <LottieView source={logoLottie} autoPlay loop style={styles.heroLogo} />
         <Text
@@ -23,14 +31,10 @@ export default function HomeScreen() {
         </Text>
         <Row gap={12} style={styles.actions}>
           <Link href="/(tabs)/transactions" asChild>
-            <Button  mode="contained">
-              Ir para Transações
-            </Button>
+            <Button mode="contained">Ir para Transações</Button>
           </Link>
           <Link href="/(tabs)/analytics" asChild>
-            <Button mode="outlined">
-              Ver Análises
-            </Button>
+            <Button mode="outlined">Ver Análises</Button>
           </Link>
         </Row>
       </View>
@@ -106,5 +110,21 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     gap: 4,
+  },
+  buttonView: {
+    width: '100%',
+    alignItems: 'flex-end',
+  },
+  buttonText: {
+    backgroundColor: '#f3f6fc',
+    color: '#687EDB',
+    fontWeight: 700,
+    borderRadius: 8,
+    padding: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
   },
 });
