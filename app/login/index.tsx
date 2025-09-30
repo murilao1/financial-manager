@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import LottieView from 'lottie-react-native';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -21,13 +22,17 @@ export default function LoginScreen() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleLogin = async () => {
     try {
+      setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/');
     } catch {
       setError('Usuário ou senha inválidos');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,8 +88,16 @@ export default function LoginScreen() {
           </View>
         ) : null}
 
-        <Pressable style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Entrar</Text>
+        <Pressable
+          style={[styles.button, loading && { opacity: 0.8 }]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
         </Pressable>
 
         <TouchableOpacity onPress={() => router.push('/login/register')}>

@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -20,6 +21,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password) {
@@ -28,12 +30,15 @@ export default function RegisterScreen() {
     }
 
     try {
+      setLoading(true);
       await registerUser(email, password, firstName, lastName);
       alert('Usuário cadastrado com sucesso!');
       router.replace('/login');
     } catch (err: any) {
-      setError('Erro ao cadastrar usuário');
       console.log(err);
+      alert('Erro ao cadastrar usuário');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,8 +124,16 @@ export default function RegisterScreen() {
           </View>
         ) : null}
 
-        <Pressable style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Cadastrar</Text>
+        <Pressable
+          style={[styles.button, loading && { opacity: 0.8 }]}
+          onPress={handleRegister}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Cadastrar</Text>
+          )}
         </Pressable>
 
         <TouchableOpacity onPress={() => router.replace('/login')}>
