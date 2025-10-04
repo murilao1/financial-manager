@@ -3,6 +3,8 @@ import { ScrollView, StyleSheet, View, Dimensions } from 'react-native';
 import { Text, useTheme, Card, Chip, ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart, PieChart } from 'react-native-chart-kit';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth, db } from '../../firebase/firebaseConfig';
 
 const CARD_MAX_WIDTH = 720;
 const CHART_PADDING = 64;
@@ -58,34 +60,71 @@ export default function AnalyticsScreen() {
     }, [transactions, selectedPeriod]);
 
     const fetchTransactions = async () => {
+        setLoading(true);
         try {
-            // TODO: Substituir pela sua chamada de API
-            const mockData: Transaction[] = [
-                { id: '1', type: 'income', amount: 5000, category: 'Salário', date: '2025-10-01', description: 'Salário mensal' },
-                { id: '2', type: 'expense', amount: 1500, category: 'Moradia', date: '2025-10-05', description: 'Aluguel' },
-                { id: '3', type: 'expense', amount: 500, category: 'Alimentação', date: '2025-10-10', description: 'Supermercado' },
-                { id: '4', type: 'expense', amount: 250, category: 'Transporte', date: '2025-10-15', description: 'Combustível' },
-                { id: '5', type: 'income', amount: 1000, category: 'Freelance', date: '2025-10-20', description: 'Projeto extra' },
-                { id: '6', type: 'expense', amount: 800, category: 'Lazer', date: '2025-10-22', description: 'Viagem' },
-                { id: '7', type: 'expense', amount: 150, category: 'Saúde', date: '2025-10-25', description: 'Farmácia' },
-                { id: '8', type: 'expense', amount: 400, category: 'Alimentação', date: '2025-10-28', description: 'Restaurante' },
-                { id: '9', type: 'income', amount: 2000, category: 'Investimentos', date: '2025-10-30', description: 'Dividendos' },
-                { id: '10', type: 'income', amount: 4000, category: 'Adiantamento', date: '2025-08-29', description: 'Salário mensal' },
-                { id: '11', type: 'income', amount: 5000, category: 'Salário', date: '2025-09-05', description: 'Salário mensal' },
-                { id: '12', type: 'expense', amount: 1500, category: 'Moradia', date: '2025-09-05', description: 'Aluguel' },
-                { id: '13', type: 'expense', amount: 500, category: 'Alimentação', date: '2025-09-10', description: 'Supermercado' },
-                { id: '14', type: 'expense', amount: 250, category: 'Transporte', date: '2025-09-15', description: 'Combustível' },
-                { id: '15', type: 'income', amount: 1000, category: 'Freelance', date: '2025-09-20', description: 'Projeto extra' },
-                { id: '16', type: 'expense', amount: 800, category: 'Lazer', date: '2025-09-22', description: 'Viagem' },
-                { id: '17', type: 'expense', amount: 150, category: 'Saúde', date: '2025-09-25', description: 'Farmácia' },
-                { id: '18', type: 'expense', amount: 400, category: 'Alimentação', date: '2025-09-28', description: 'Restaurante' },
-                { id: '19', type: 'income', amount: 2000, category: 'Investimentos', date: '2025-09-29', description: 'Dividendos' },
-                { id: '20', type: 'income', amount: 4000, category: 'Adiantamento', date: '2025-09-30', description: 'Salário mensal' },
-            ];
+            const user = auth.currentUser;
+            if (!user) {
+                setTransactions([]);
+                return;
+            }
 
-            setTransactions(mockData);
+            const transRef = collection(db, 'transacoes');
+            const q = query(transRef, where('userId', '==', user.uid));
+            const snapshot = await getDocs(q);
+
+            const mapType = (transactionField: any, categories: any[], amount: number) => {
+                const field = (transactionField || '').toString().toLowerCase();
+                const cats = (categories || []).map((c: any) => c.toString().toLowerCase());
+
+                if (field.includes('debit') || field.includes('desp') || field.includes('expense') || cats.some((c: string) => c.includes('moradia') || c.includes('alimentação') || c.includes('lazer') || c.includes('transporte') || c.includes('saúde'))) {
+                    return 'expense' as const;
+                }
+
+                if (field.includes('credit') || field.includes('deposit') || field.includes('recei') || cats.some((c: string) => c.includes('pagamento') || c.includes('salário') || c.includes('salario') || c.includes('invest'))) {
+                    return 'income' as const;
+                }
+
+                return amount >= 0 ? 'income' as const : 'expense' as const;
+            };
+
+            const data: Transaction[] = snapshot.docs.map(docSnap => {
+                const d: any = docSnap.data();
+                const categories = d.categories ?? [];
+                const amount = typeof d.value === 'number' ? d.value : (d.amount ?? 0);
+
+                let dateStr = new Date().toISOString();
+                if (d.createdAt) {
+                    try {
+                        if (typeof d.createdAt.toDate === 'function') {
+                            dateStr = d.createdAt.toDate().toISOString();
+                        } else {
+                            dateStr = new Date(d.createdAt).toISOString();
+                        }
+                    } catch (e) {
+                        dateStr = new Date().toISOString();
+                    }
+                }
+
+                const category = Array.isArray(categories) && categories.length > 0 ? String(categories[0]) : (d.category || 'Outros');
+                const description = d.observation || d.description || d.transaction || '';
+                const type = mapType(d.transaction, categories, amount);
+
+                return {
+                    id: docSnap.id,
+                    type,
+                    amount: Number(amount || 0),
+                    category,
+                    date: dateStr,
+                    description,
+                } as Transaction;
+            });
+
+
+            data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setTransactions(data);
         } catch (error) {
-            console.error('Erro ao buscar transações:', error);
+            console.error('Erro ao buscar transações do Firestore:', error);
+            setTransactions([]);
         } finally {
             setLoading(false);
         }
@@ -256,11 +295,9 @@ export default function AnalyticsScreen() {
 
     const categoryData = getCategoryChartData();
     const pieData = getPieChartData();
-
-    // Cálculo responsivo baseado nas dimensões atuais
     const isMobile = dimensions.width <= 768;
     const cardContentWidth = isMobile
-        ? dimensions.width - 32  // 16px de padding de cada lado do containerView
+        ? dimensions.width - 32
         : Math.min(dimensions.width - 32, CARD_MAX_WIDTH);
     const chartWidth = isMobile
         ? dimensions.width - CHART_PADDING
@@ -289,6 +326,7 @@ export default function AnalyticsScreen() {
                                 onPress={() => setSelectedPeriod('week')}
                                 style={[styles.chip, selectedPeriod === 'week' && { backgroundColor: theme.colors.primary }]}
                                 textStyle={selectedPeriod === 'week' ? { color: theme.colors.onPrimary } : undefined}
+                                icon={() => null}
                             >
                                 Semana
                             </Chip>
@@ -297,6 +335,7 @@ export default function AnalyticsScreen() {
                                 onPress={() => setSelectedPeriod('month')}
                                 style={[styles.chip, selectedPeriod === 'month' && { backgroundColor: theme.colors.primary }]}
                                 textStyle={selectedPeriod === 'month' ? { color: theme.colors.onPrimary } : undefined}
+                                icon={() => null}
                             >
                                 Mês
                             </Chip>
@@ -305,6 +344,7 @@ export default function AnalyticsScreen() {
                                 onPress={() => setSelectedPeriod('year')}
                                 style={[styles.chip, selectedPeriod === 'year' && { backgroundColor: theme.colors.primary }]}
                                 textStyle={selectedPeriod === 'year' ? { color: theme.colors.onPrimary } : undefined}
+                                icon={() => null}
                             >
                                 Ano
                             </Chip>
@@ -559,6 +599,7 @@ const styles = StyleSheet.create({
     subtitle: {
         textAlign: 'center',
         marginBottom: 20,
+        letterSpacing: 0,
     },
     loadingContainer: {
         flex: 1,
