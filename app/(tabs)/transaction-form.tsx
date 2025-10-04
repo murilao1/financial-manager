@@ -8,8 +8,10 @@ import Button from '@/designSystem/Button';
 import Notification from '@/designSystem/Notification';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { saveTransaction } from '@/firebase/saveTransactions';
 
 type TransactionsType = {
+  id?: string;
   transaction: string,
   value: number,
   observation: string,
@@ -49,24 +51,31 @@ export default function TransactionFormScreen({ selectedTransaction }: Transacti
     { label: 'Transferência', value: 'credit' },
   ];
 
-  const handleSave = () => {
-    if (!transaction.trim()) {
-      setNotification({ message: 'O campo \'Tipo de Transação\' é obrigatório.', type: 'error' });
-      return;
-    }
-    if (!value.trim() || value === 'R$ 0,00') {
-      setNotification({ message: 'O campo \'Valor\' é obrigatório.', type: 'error' });
-      return;
-    }
+  const handleSave = async () => {
+    try {
+      if (!transaction.trim()) {
+        setNotification({ message: 'O campo \'Tipo de Transação\' é obrigatório.', type: 'error' });
+        return;
+      }
+      if (!value.trim() || value === 'R$ 0,00') {
+        setNotification({ message: 'O campo \'Valor\' é obrigatório.', type: 'error' });
+        return;
+      }
 
-    console.log('DADOS SALVOS', {
-      transaction,
-      value: valueNumeric,
-      observation,
-      file,
-      categories: suggestedCategories.length > 0 ? suggestedCategories : ['Outros'],
-    });
-    setNotification({ message: 'Transação salva com sucesso!', type: 'success' });
+      const transactionData = {
+        transaction,
+        value: valueNumeric!,
+        observation,
+        file,
+        categories: suggestedCategories.length > 0 ? suggestedCategories : ['Outros'],
+      };
+
+      await saveTransaction(transactionData, selectedTransaction?.id);
+
+      setNotification({ message: 'Transação salva com sucesso!', type: 'success' });
+    } catch (error) {
+      setNotification({ message: 'Erro ao salvar transação.', type: 'error' });
+    }
   };
 
   const handleCancel = () => {
