@@ -13,7 +13,7 @@ type FileData = {
 
 type UploadFieldProps = {
   file: FileData | null;
-  onChange: (file: FileData) => void;
+  onChange: (file: FileData | null) => void;
   fileType?: '*/*' | 'image/*' | 'application/pdf' | string;
 };
 

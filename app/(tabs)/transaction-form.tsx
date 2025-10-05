@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput, Chip, useTheme } from 'react-native-paper';
 import Select from '@/designSystem/Select';
@@ -53,6 +53,22 @@ export default function TransactionFormScreen({
     { label: 'Depósito', value: 'debit' },
     { label: 'Transferência', value: 'credit' },
   ];
+
+  useEffect(() => {
+    if (selectedTransaction) {
+      setTransaction(selectedTransaction.transaction || '');
+      setObservation(selectedTransaction.observation || '');
+      setFile(selectedTransaction.file || null);
+      const formattedValue = selectedTransaction.value.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      });
+
+      setValue(formattedValue);
+      setValueNumeric(selectedTransaction.value);
+      setSuggestedCategories(selectedTransaction.categories || []);
+    }
+  }, [selectedTransaction]);
 
   const handleSave = async () => {
     try {
