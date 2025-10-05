@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { ScrollView, StyleSheet, View, Dimensions } from 'react-native';
 import { Text, useTheme, Card, Chip, ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -49,9 +50,11 @@ export default function AnalyticsScreen() {
         return () => subscription?.remove();
     }, []);
 
-    useEffect(() => {
-        fetchTransactions();
-    }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions();
+    }, [])
+  );
 
     useEffect(() => {
         if (transactions.length > 0) {

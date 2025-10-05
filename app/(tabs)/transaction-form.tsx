@@ -1,26 +1,26 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput, Chip, useTheme } from 'react-native-paper';
 import Select from '@/designSystem/Select';
 import UploadField from '@/designSystem/UploadField';
 import { suggestCategories } from '@/helpers/categories';
 import Button from '@/designSystem/Button';
 import Notification from '@/designSystem/Notification';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveTransaction } from '@/firebase/saveTransactions';
 
 type TransactionsType = {
   id?: string;
-  transaction: string,
-  value: number,
-  observation: string,
+  transaction: string;
+  value: number;
+  observation: string;
   file: {
     uri: string;
     name: string;
     size?: number;
     type?: string;
-  } | null,
+  } | null;
   categories: string[];
 };
 
@@ -28,8 +28,11 @@ type TransactionFormProps = {
   selectedTransaction?: TransactionsType | null;
 };
 
-export default function TransactionFormScreen({ selectedTransaction }: TransactionFormProps) {
+export default function TransactionFormScreen({
+  selectedTransaction,
+}: TransactionFormProps) {
   const theme = useTheme();
+  const router = useRouter();
   const [observation, setObservation] = useState('');
   const [transaction, setTransaction] = useState('');
   const [value, setValue] = useState('');
@@ -37,7 +40,7 @@ export default function TransactionFormScreen({ selectedTransaction }: Transacti
   const [suggestedCategories, setSuggestedCategories] = useState<string[]>([]);
   const [notification, setNotification] = useState<{
     message: string;
-    type: 'error' | 'success' | 'info'
+    type: 'error' | 'success' | 'info';
   } | null>(null);
   const [file, setFile] = useState<{
     uri: string;
@@ -51,14 +54,37 @@ export default function TransactionFormScreen({ selectedTransaction }: Transacti
     { label: 'Transferência', value: 'credit' },
   ];
 
+  useEffect(() => {
+    if (selectedTransaction) {
+      setTransaction(selectedTransaction.transaction || '');
+      setObservation(selectedTransaction.observation || '');
+      setFile(selectedTransaction.file || null);
+      const formattedValue = selectedTransaction.value.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      });
+
+      setValue(formattedValue);
+      setValueNumeric(selectedTransaction.value);
+      setSuggestedCategories(selectedTransaction.categories || []);
+    }
+  }, [selectedTransaction]);
+
   const handleSave = async () => {
     try {
       if (!transaction.trim()) {
-        setNotification({ message: 'O campo \'Tipo de Transação\' é obrigatório.', type: 'error' });
+        setNotification({
+          message: "O campo 'Tipo de Transação' é obrigatório.",
+          type: 'error',
+        });
         return;
       }
-      if (!value.trim() || value === 'R$ 0,00') {
-        setNotification({ message: 'O campo \'Valor\' é obrigatório.', type: 'error' });
+
+      if (!value.trim() || value === 'R$\u00A00,00') {
+        setNotification({
+          message: "O campo 'Valor' é obrigatório.",
+          type: 'error',
+        });
         return;
       }
 
@@ -67,18 +93,26 @@ export default function TransactionFormScreen({ selectedTransaction }: Transacti
         value: valueNumeric!,
         observation,
         file,
-        categories: suggestedCategories.length > 0 ? suggestedCategories : ['Outros'],
+        categories:
+          suggestedCategories.length > 0 ? suggestedCategories : ['Outros'],
       };
 
       await saveTransaction(transactionData, selectedTransaction?.id);
 
-      setNotification({ message: 'Transação salva com sucesso!', type: 'success' });
+      setNotification({
+        message: 'Transação salva com sucesso!',
+        type: 'success',
+      });
+      handleClear();
+      setTimeout(() => {
+        router.replace('/(tabs)/transactions');
+      }, 500);
     } catch (error) {
       setNotification({ message: 'Erro ao salvar transação.', type: 'error' });
     }
   };
 
-  const handleCancel = () => {
+  const handleClear = () => {
     setTransaction('');
     setValue('');
     setObservation('');
@@ -100,7 +134,9 @@ export default function TransactionFormScreen({ selectedTransaction }: Transacti
           onHide={() => setNotification(null)}
         />
       )}
-      <View style={[styles.header, { borderBottomColor: theme.colors.primary }]}>
+      <View
+        style={[styles.header, { borderBottomColor: theme.colors.primary }]}
+      >
         <Text
           variant="headlineMedium"
           style={[styles.title, { color: theme.colors.primary }]}
@@ -170,14 +206,15 @@ export default function TransactionFormScreen({ selectedTransaction }: Transacti
           )}
 
           <UploadField
+            file={file}
             fileType="*/*"
             onChange={(file) => setFile(file)}
           />
         </View>
-      </ ScrollView>
+      </ScrollView>
       <View style={[styles.footer, { borderTopColor: theme.colors.primary }]}>
         <Link href="/(tabs)/transactions" asChild>
-          <Button mode="outlined" onPress={handleCancel}>
+          <Button mode="outlined" onPress={handleClear}>
             Cancelar
           </Button>
         </Link>
@@ -250,7 +287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     padding: 16,
-    marginBottom: 55,
+    marginBottom: 70,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
 });
