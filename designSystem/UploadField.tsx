@@ -12,15 +12,16 @@ type FileData = {
 };
 
 type UploadFieldProps = {
+  file: FileData | null;
   onChange: (file: FileData) => void;
   fileType?: '*/*' | 'image/*' | 'application/pdf' | string;
 };
 
 export default function UploadField({
-                                      onChange,
-                                      fileType = '*/*',
-                                    }: UploadFieldProps) {
-  const [file, setFile] = useState<FileData | null>(null);
+  file,
+  onChange,
+  fileType = '*/*',
+}: UploadFieldProps) {
   const theme = useTheme();
 
   const pickFile = async () => {
@@ -33,13 +34,11 @@ export default function UploadField({
         size: resultData.size,
         type: resultData.mimeType,
       };
-      setFile(fileData);
       onChange(fileData);
     }
   };
 
   const removeFile = () => {
-    setFile(null);
     onChange(null);
   };
 
@@ -47,21 +46,32 @@ export default function UploadField({
     if (!file) return null;
     const isImage = file.type.match(/\/(jpg|jpeg|png|gif)$/i);
     return (
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated">
+      <Card
+        style={[styles.card, { backgroundColor: theme.colors.surface }]}
+        mode="elevated"
+      >
         <Card.Title
           subtitle={file.name}
           center={file.name}
           left={(props) => (
             <>
               {isImage ? (
-                <Image {...props} source={{ uri: file.uri }} style={styles.previewImage} />
+                <Image
+                  {...props}
+                  source={{ uri: file.uri }}
+                  style={styles.previewImage}
+                />
               ) : (
                 <Icon source="file-document-outline" size={40} />
               )}
             </>
           )}
           right={(props) => (
-            <IconButton {...props} icon="trash-can-outline" onPress={removeFile} />
+            <IconButton
+              {...props}
+              icon="trash-can-outline"
+              onPress={removeFile}
+            />
           )}
         />
       </Card>
@@ -72,7 +82,12 @@ export default function UploadField({
     <View style={styles.container}>
       {!file ? (
         <View style={styles.labelRow}>
-          <Button icon="upload" mode="text" onPress={pickFile} contentStyle={styles.button}>
+          <Button
+            icon="upload"
+            mode="text"
+            onPress={pickFile}
+            contentStyle={styles.button}
+          >
             Selecionar um arquivo
           </Button>
         </View>
