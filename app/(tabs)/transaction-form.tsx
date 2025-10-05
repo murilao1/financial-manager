@@ -50,8 +50,8 @@ export default function TransactionFormScreen({
   } | null>(null);
 
   const options = [
-    { label: 'Depósito', value: 'debit' },
-    { label: 'Transferência', value: 'credit' },
+    { label: 'Depósito', value: 'entrada' },
+    { label: 'Transferência', value: 'saída' },
   ];
 
   useEffect(() => {
