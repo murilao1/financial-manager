@@ -1,6 +1,6 @@
-import React from "react";
-import { StyleSheet } from "react-native";
-import { Button as ButtonPaper } from "react-native-paper";
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import { Button as ButtonPaper } from 'react-native-paper';
 
 type AppButtonProps = React.ComponentProps<typeof Button>;
 

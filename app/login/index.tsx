@@ -1,8 +1,3 @@
-import logoLottie from '@/assets/lottie/logo.json';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import LottieView from 'lottie-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,16 +8,29 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useRouter } from 'expo-router';
 import { useTheme } from 'react-native-paper';
-import { auth } from '../../firebase/firebaseConfig';
+import LottieView from 'lottie-react-native';
+import { auth } from '@/firebase/firebaseConfig';
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+import Notification from '@/designSystem/Notification';
+import logoLottie from '@/assets/lottie/logo.json';
 
 export default function LoginScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
 
   const handleLogin = async () => {
     try {
@@ -36,10 +44,42 @@ export default function LoginScreen() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setNotification({
+        message: 'Informe seu e-mail para redefinir a senha.',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setNotification({
+        message: 'Enviamos um link para o seu e-mail para redefinir sua senha.',
+        type: 'success',
+      });
+    } catch (err) {
+      console.error(err);
+      setNotification({
+        message: 'Não foi possível enviar o e-mail de redefinição.',
+        type: 'error',
+      });
+    }
+  };
+
   return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onHide={() => setNotification(null)}
+        />
+      )}
+
       <LottieView source={logoLottie} autoPlay loop style={styles.heroLogo} />
 
       <View style={styles.formContainer}>
@@ -101,7 +141,15 @@ export default function LoginScreen() {
         </Pressable>
 
         <TouchableOpacity onPress={() => router.push('/login/register')}>
-          <Text style={styles.link}>Não tem conta? Cadastre-se</Text>
+          <Text style={[styles.link, { marginTop: 12 }]}>
+            Não tem conta? Cadastre-se
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleForgotPassword}>
+          <Text style={[styles.link, { marginTop: 10 }]}>
+            Esqueci minha senha
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -187,7 +235,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   link: {
-    marginTop: 20,
     color: '#0d30cc',
     fontSize: 14,
     textDecorationLine: 'underline',

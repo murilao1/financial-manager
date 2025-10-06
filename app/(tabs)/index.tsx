@@ -1,11 +1,9 @@
 import logoLottie from '@/assets/lottie/logo.json';
 import { Row } from '@/components/ui/Layout';
 import Button from '@/designSystem/Button';
-import { auth } from '@/firebase/firebaseConfig';
-import { signOut } from '@firebase/auth';
 import { Link } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 
 export default function HomeScreen() {
@@ -13,11 +11,6 @@ export default function HomeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.buttonView}>
-        <Pressable onPress={() => signOut(auth)}>
-          <Text style={styles.buttonText}>Sair</Text>
-        </Pressable>
-      </View>
       <View style={styles.hero}>
         <LottieView source={logoLottie} autoPlay loop style={styles.heroLogo} />
         <Text
@@ -72,12 +65,10 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 16,
-    // paddingBottom: 64,
-    gap: 16,
+    paddingBottom: 130,
     alignItems: 'center',
-    // justifyContent: 'center',
   },
   hero: {
     alignItems: 'center',

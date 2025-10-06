@@ -1,6 +1,5 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
@@ -14,7 +13,6 @@ export default function TabLayout() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  // apenas o necessário para flutuar corretamente
   const TABBAR_BASE_HEIGHT = 60;
   const TABBAR_FLOAT_OFFSET = 10;
   const RESERVED_SPACE =
@@ -22,7 +20,6 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      // reserva global para a tab bar flutuante (evita sobreposição)
       sceneContainerStyle={{
         backgroundColor: theme.colors.background,
         paddingBottom: RESERVED_SPACE,
@@ -35,25 +32,22 @@ export default function TabLayout() {
         tabBarBackground: TabBarBackground,
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          paddingTop: 14,
-          paddingBottom: 14,
+          paddingTop: 3,
+          paddingBottom: 6,
           marginLeft: 16,
           marginRight: 16,
-          // flutuar acima dos botões do Android
           position: 'absolute',
           bottom: insets.bottom + TABBAR_FLOAT_OFFSET,
           borderRadius: 18,
           backgroundColor: theme.colors.surface,
-          elevation: 8, // Android shadow
+          elevation: 8,
           shadowColor: theme.colors.shadow,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,
-          borderTopWidth: 0,
-          // altura fixa (sem 'auto') para não “engordar”
+          borderWidth: 1,
+          borderColor: theme.colors.background,
           height: TABBAR_BASE_HEIGHT,
-          alignItems: 'center',
-          justifyContent: 'center',
         },
         animation: 'shift',
         transitionSpec: { animation: 'timing', config: { duration: 250 } },
@@ -62,7 +56,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'Início',
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
           ),
@@ -84,7 +78,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="transaction-form"
         options={{
-          title: 'Adicionar Transação',
+          title: 'Adicionar',
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="chevron.right" color={color} />
           ),
@@ -100,11 +94,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="profile"
         options={{
-          title: 'Explore',
+          title: 'Perfil',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <IconSymbol size={28} name="person.fill" color={color} />
           ),
         }}
       />
