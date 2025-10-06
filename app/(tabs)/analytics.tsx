@@ -2,23 +2,23 @@ import { useFocusEffect } from '@react-navigation/native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  View,
+    Animated,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    View,
 } from 'react-native';
 import { BarChart, PieChart } from 'react-native-chart-kit';
 import {
-  ActivityIndicator,
-  Card,
-  Chip,
-  Text,
-  useTheme,
+    ActivityIndicator,
+    Card,
+    Chip,
+    Text,
+    useTheme,
 } from 'react-native-paper';
 import {
-  SafeAreaView,
-  useSafeAreaInsets,
+    SafeAreaView,
+    useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebase/firebaseConfig';
 
