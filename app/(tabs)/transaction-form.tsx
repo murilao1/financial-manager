@@ -147,7 +147,9 @@ export default function TransactionFormScreen({
       <ScrollView contentContainerStyle={styles.containerView}>
         <View style={styles.container}>
           <Text variant="bodyLarge" style={styles.subtitle}>
-            {!selectedTransaction ? 'Preencha o formulário para adicionar uma nova transação.' : 'Altere os dados da transação selecionada.'}
+            {!selectedTransaction
+              ? 'Preencha o formulário para adicionar uma nova transação.'
+              : 'Altere os dados da transação selecionada.'}
           </Text>
           <Select
             label="Tipo de Transação"
@@ -194,7 +196,10 @@ export default function TransactionFormScreen({
                   {suggestedCategories.map((cat) => (
                     <Chip
                       key={cat}
-                      style={[styles.chip, { backgroundColor: theme.colors.primary }]}
+                      style={[
+                        styles.chip,
+                        { backgroundColor: theme.colors.primary },
+                      ]}
                       textStyle={{ color: theme.colors.onPrimary }}
                     >
                       {cat}
