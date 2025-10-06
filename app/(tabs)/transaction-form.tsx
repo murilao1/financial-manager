@@ -6,9 +6,11 @@ import UploadField from '@/designSystem/UploadField';
 import { suggestCategories } from '@/helpers/categories';
 import Button from '@/designSystem/Button';
 import Notification from '@/designSystem/Notification';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveTransaction } from '@/firebase/saveTransactions';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase/firebaseConfig';
 
 type TransactionsType = {
   id?: string;
@@ -38,6 +40,7 @@ export default function TransactionFormScreen({
   const [value, setValue] = useState('');
   const [valueNumeric, setValueNumeric] = useState<number | null>(null);
   const [suggestedCategories, setSuggestedCategories] = useState<string[]>([]);
+  const { id } = useLocalSearchParams();
   const [notification, setNotification] = useState<{
     message: string;
     type: 'error' | 'success' | 'info';
@@ -55,20 +58,36 @@ export default function TransactionFormScreen({
   ];
 
   useEffect(() => {
-    if (selectedTransaction) {
-      setTransaction(selectedTransaction.transaction || '');
-      setObservation(selectedTransaction.observation || '');
-      setFile(selectedTransaction.file || null);
-      const formattedValue = selectedTransaction.value.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      });
+    const fetchTransaction = async () => {
+      if (!id) return;
+      try {
+        const docRef = doc(db, 'transacoes', id as string);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          setTransaction(data.transaction || '');
+          setObservation(data.observation || '');
+          setFile(data.file || null);
+          setValueNumeric(data.value || 0);
+          setValue(
+            (data.value || 0).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })
+          );
+          setSuggestedCategories(data.categories || []);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar transação:', error);
+        setNotification({
+          message: 'Erro ao carregar transação.',
+          type: 'error',
+        });
+      }
+    };
 
-      setValue(formattedValue);
-      setValueNumeric(selectedTransaction.value);
-      setSuggestedCategories(selectedTransaction.categories || []);
-    }
-  }, [selectedTransaction]);
+    fetchTransaction();
+  }, [id]);
 
   const handleSave = async () => {
     try {
