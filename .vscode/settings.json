@@ -4,5 +4,8 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }

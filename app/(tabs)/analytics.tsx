@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, View, Dimensions } from 'react-native';
-import { Text, useTheme, Card, Chip, ActivityIndicator } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarChart, PieChart } from 'react-native-chart-kit';
+import { useFocusEffect } from '@react-navigation/native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { BarChart, PieChart } from 'react-native-chart-kit';
+import { ActivityIndicator, Card, Chip, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebase/firebaseConfig';
 
 const CARD_MAX_WIDTH = 720;
@@ -49,9 +50,11 @@ export default function AnalyticsScreen() {
         return () => subscription?.remove();
     }, []);
 
-    useEffect(() => {
-        fetchTransactions();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchTransactions();
+        }, [])
+    );
 
     useEffect(() => {
         if (transactions.length > 0) {
@@ -76,11 +79,49 @@ export default function AnalyticsScreen() {
                 const field = (transactionField || '').toString().toLowerCase();
                 const cats = (categories || []).map((c: any) => c.toString().toLowerCase());
 
-                if (field.includes('debit') || field.includes('desp') || field.includes('expense') || cats.some((c: string) => c.includes('moradia') || c.includes('alimentação') || c.includes('lazer') || c.includes('transporte') || c.includes('saúde'))) {
+                if (field.includes('saída') ||
+                    field.includes('transferência') ||
+                    field.includes('transferencia') ||
+                    field.includes('transf') ||
+                    cats.some((c: string) => c.includes('saída') ||
+                        c.includes('transferência') ||
+                        c.includes('transferencia') ||
+                        c.includes('transf'))) {
                     return 'expense' as const;
                 }
 
-                if (field.includes('credit') || field.includes('deposit') || field.includes('recei') || cats.some((c: string) => c.includes('pagamento') || c.includes('salário') || c.includes('salario') || c.includes('invest'))) {
+                if (field.includes('entrada') ||
+                    field.includes('depósito') ||
+                    field.includes('deposito') ||
+                    field.includes('dep') ||
+                    field.includes('recei') ||
+                    cats.some((c: string) => c.includes('entrada') ||
+                        c.includes('depósito') ||
+                        c.includes('deposito') ||
+                        c.includes('dep') ||
+                        c.includes('recei'))) {
+                    return 'income' as const;
+                }
+
+                if (field.includes('debit') ||
+                    field.includes('desp') ||
+                    field.includes('expense') ||
+                    cats.some((c: string) => c.includes('moradia') ||
+                        c.includes('alimentação') ||
+                        c.includes('alimentacao') ||
+                        c.includes('lazer') ||
+                        c.includes('transporte') ||
+                        c.includes('saúde') ||
+                        c.includes('saude'))) {
+                    return 'expense' as const;
+                }
+
+                if (field.includes('credit') ||
+                    field.includes('recei') ||
+                    cats.some((c: string) => c.includes('pagamento') ||
+                        c.includes('salário') ||
+                        c.includes('salario') ||
+                        c.includes('invest'))) {
                     return 'income' as const;
                 }
 
@@ -90,7 +131,8 @@ export default function AnalyticsScreen() {
             const data: Transaction[] = snapshot.docs.map(docSnap => {
                 const d: any = docSnap.data();
                 const categories = d.categories ?? [];
-                const amount = typeof d.value === 'number' ? d.value : (d.amount ?? 0);
+                const rawAmount = typeof d.value === 'number' ? d.value : (d.amount ?? 0);
+                const amountNum = Number(rawAmount || 0);
 
                 let dateStr = new Date().toISOString();
                 if (d.createdAt) {
@@ -107,18 +149,18 @@ export default function AnalyticsScreen() {
 
                 const category = Array.isArray(categories) && categories.length > 0 ? String(categories[0]) : (d.category || 'Outros');
                 const description = d.observation || d.description || d.transaction || '';
-                const type = mapType(d.transaction, categories, amount);
+                const type = mapType(d.transaction, categories, amountNum);
+                const normalizedAmount = Math.abs(amountNum);
 
                 return {
                     id: docSnap.id,
                     type,
-                    amount: Number(amount || 0),
+                    amount: normalizedAmount,
                     category,
                     date: dateStr,
                     description,
                 } as Transaction;
             });
-
 
             data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
             setTransactions(data);
@@ -260,7 +302,13 @@ export default function AnalyticsScreen() {
                 return acc;
             }, {} as Record<string, number>);
 
-        const colors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#009688'];
+        const colors = [
+            '#FF9800',
+            '#E91E63',
+            '#9C27B0',
+            '#2196F3',
+            '#FFFB07',
+        ];
         const isMobile = dimensions.width <= 768;
 
         return Object.entries(expensesByCategory)
@@ -437,7 +485,9 @@ export default function AnalyticsScreen() {
                                         </Text>
                                         <View style={styles.statRow}>
                                             <Text variant="titleMedium" style={{ color: '#4CAF50', fontWeight: '700' }}>
-                                                R$ {metrics.largestIncome.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                R$ {metrics.largestIncome.amount.toLocaleString('pt-BR', {
+                                                    minimumFractionDigits: 2
+                                                })}
                                             </Text>
                                             <Text variant="bodySmall" style={styles.statDate}>
                                                 {metrics.largestIncome.date}
@@ -459,7 +509,9 @@ export default function AnalyticsScreen() {
                                         </Text>
                                         <View style={styles.statRow}>
                                             <Text variant="titleMedium" style={{ color: '#F44336', fontWeight: '700' }}>
-                                                R$ {metrics.largestExpense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                R$ {metrics.largestExpense.amount.toLocaleString('pt-BR', {
+                                                    minimumFractionDigits: 2
+                                                })}
                                             </Text>
                                             <Text variant="bodySmall" style={styles.statDate}>
                                                 {metrics.largestExpense.date}
