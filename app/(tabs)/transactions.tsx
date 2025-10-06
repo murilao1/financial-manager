@@ -175,12 +175,7 @@ export default function TransactionsScreen() {
     const transaction = selectedTransactions[0];
     router.push({
       pathname: "/(tabs)/transaction-form",
-      params: {
-        id: transaction.id,
-        amount: String(transaction.amount),
-        category: transaction.category,
-        date: transaction.date,
-      },
+      params: { id: transaction.id },
     });
   };
 
