@@ -1,8 +1,13 @@
 import Button from "@/designSystem/Button";
 import Notification from "@/designSystem/Notification";
-import { useRouter } from "expo-router";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot
+} from "firebase/firestore";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,8 +23,8 @@ type Transaction = {
   id: string;
   date: string;
   amount: number;
-  category: "credit" | "debit"; // valor do Firestore
-  categoryLabel: string;       // valor exibido no front
+  category: "entrada" | "saida";
+  categoryLabel: string;
 };
 
 export default function TransactionsScreen() {
@@ -27,82 +32,94 @@ export default function TransactionsScreen() {
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"todos" | "deposito" | "transferencia">("todos");
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransactions, setSelectedTransactions] = useState<Transaction[]>([]);
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
 
-  // 🔹 Buscar transações do Firestore
-  const fetchTransactions = async () => {
-    const user = auth.currentUser;
-    if (!user) return [];
+  useFocusEffect(
+    useCallback(() => {
+      const user = auth.currentUser;
+      if (!user) return;
 
-    setLoading(true);
-    try {
       const transactionsRef = collection(db, "transacoes");
-      const q = query(transactionsRef, where("userId", "==", user.uid));
 
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map((doc) => {
-        const category = doc.data().transaction.toLowerCase(); // "credit" ou "debit"
-        return {
-          id: doc.id,
-          date: doc.data().createdAt?.toDate
-            ? doc.data().createdAt.toDate().toISOString()
-            : new Date().toISOString(),
-          amount: doc.data().value,
-          category: category as "credit" | "debit",
-          categoryLabel: category === "credit" ? "Depósito" : "Transferência",
-          ...doc.data(),
-        };
-      });
-      setTransactions(data);
-    } catch (error) {
-      console.error(error);
-      setNotification({ message: "Erro ao carregar transações", type: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
+      const unsubscribe = onSnapshot(
+        transactionsRef,
+        (snapshot) => {
+          const data = snapshot.docs
+            .map((d) => {
+              const docData = d.data();
+              const categoryRaw = docData.transaction?.toLowerCase();
+              let category: "entrada" | "saida" = "saida";
+              let categoryLabel = "Transferência";
+              if (categoryRaw === "entrada") {
+                category = "entrada";
+                categoryLabel = "Depósito";
+              }
+              return {
+                id: d.id,
+                amount: docData.value,
+                date: docData.createdAt?.toDate
+                  ? docData.createdAt.toDate().toISOString()
+                  : new Date().toISOString(),
+                category,
+                categoryLabel,
+                userId: docData.userId,
+              };
+            })
+            .filter((t) => t.userId === user.uid)
+            .sort((a, b) => (a.date < b.date ? 1 : -1));
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
+          setTransactions(data);
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Erro ao escutar transações:", error);
+          setNotification({ message: "Erro ao carregar transações", type: "error" });
+          setLoading(false);
+        }
+      );
 
-  // 🔹 Filtrar transações
+      return () => unsubscribe();
+    }, [])
+  );
+
   const filteredTransactions =
     filter === "todos"
       ? transactions
-      : transactions.filter((t) =>
-          (filter === "deposito" && t.category === "credit") ||
-          (filter === "transferencia" && t.category === "debit")
-        );
+      : transactions.filter(
+        (t) =>
+          (filter === "deposito" && t.category === "entrada") ||
+          (filter === "transferencia" && t.category === "saida")
+      );
 
-  // 🔹 Renderização de cada item
+  const toggleSelectTransaction = (item: Transaction) => {
+    const exists = selectedTransactions.find((t) => t.id === item.id);
+    if (exists) {
+      setSelectedTransactions(selectedTransactions.filter((t) => t.id !== item.id));
+    } else {
+      setSelectedTransactions([...selectedTransactions, item]);
+    }
+  };
+
   const renderItem = ({ item }: { item: Transaction }) => {
-    const isSelected = selectedTransaction?.id === item.id;
-    const isCredit = item.category === "credit";
+    const isSelected = selectedTransactions.some((t) => t.id === item.id);
+    const isEntrada = item.category === "entrada";
 
     return (
       <Card
         style={[
           styles.card,
-          {
-            backgroundColor: isSelected
-              ? theme.colors.secondaryContainer
-              : theme.colors.background,
-          },
+          { backgroundColor: isSelected ? theme.colors.secondaryContainer : theme.colors.background },
         ]}
-        onPress={() => setSelectedTransaction(item)}
+        onPress={() => toggleSelectTransaction(item)}
       >
         <Card.Content style={{ paddingVertical: 12 }}>
-          <Text
-            variant="bodySmall"
-            style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}
-          >
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
             {new Date(item.date).toLocaleString("pt-BR")}
           </Text>
           <View style={styles.itemRow}>
@@ -115,13 +132,9 @@ export default function TransactionsScreen() {
             </Chip>
             <Text
               variant="titleMedium"
-              style={{
-                color: isCredit ? "#16A34A" : theme.colors.error,
-                fontWeight: "bold",
-                fontSize: 16,
-              }}
+              style={{ color: isEntrada ? "#16A34A" : theme.colors.error, fontWeight: "bold", fontSize: 16 }}
             >
-              {isCredit
+              {isEntrada
                 ? `+R$ ${item.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
                 : `-R$ ${Math.abs(item.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
             </Text>
@@ -131,21 +144,26 @@ export default function TransactionsScreen() {
     );
   };
 
-  // 🔹 Excluir
-  const handleDelete = () => {
-    if (!selectedTransaction) return;
+  const handleDelete = async () => {
+    if (selectedTransactions.length === 0) return;
+
     Alert.alert(
-      "Excluir transação",
-      "Tem certeza que deseja excluir esta transação?",
+      "Excluir transações",
+      `Deseja realmente excluir ${selectedTransactions.length} transação(ões)?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Excluir",
           style: "destructive",
-          onPress: () => {
-            setTransactions((prev) => prev.filter((t) => t.id !== selectedTransaction.id));
-            setSelectedTransaction(null);
-            setNotification({ message: "Transação excluída!", type: "info" });
+          onPress: async () => {
+            try {
+              await Promise.all(selectedTransactions.map((t) => deleteDoc(doc(db, "transacoes", t.id))));
+              setSelectedTransactions([]);
+              setNotification({ message: "Transações excluídas com sucesso!", type: "info" });
+            } catch (error) {
+              console.error("Erro ao excluir:", error);
+              setNotification({ message: "Erro ao excluir transações", type: "error" });
+            }
           },
         },
       ]
@@ -153,27 +171,22 @@ export default function TransactionsScreen() {
   };
 
   const handleEdit = () => {
-    if (!selectedTransaction) return;
+    if (selectedTransactions.length !== 1) return;
+    const transaction = selectedTransactions[0];
     router.push({
       pathname: "/(tabs)/transaction-form",
       params: {
-        id: selectedTransaction.id,
-        amount: String(selectedTransaction.amount),
-        category: selectedTransaction.category,
-        date: selectedTransaction.date,
+        id: transaction.id,
+        amount: String(transaction.amount),
+        category: transaction.category,
+        date: transaction.date,
       },
     });
   };
 
   return (
     <SafeAreaView style={styles.screen}>
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onHide={() => setNotification(null)}
-        />
-      )}
+      {notification && <Notification message={notification.message} type={notification.type} onHide={() => setNotification(null)} />}
 
       <View style={[styles.header, { borderBottomColor: theme.colors.primary }]}>
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
@@ -181,7 +194,6 @@ export default function TransactionsScreen() {
         </Text>
       </View>
 
-      {/* 🔹 Filtro */}
       <View style={styles.tabRow}>
         <Chip
           selected={filter === "todos"}
@@ -191,7 +203,6 @@ export default function TransactionsScreen() {
         >
           Todos
         </Chip>
-
         <Chip
           selected={filter === "deposito"}
           onPress={() => setFilter("deposito")}
@@ -200,7 +211,6 @@ export default function TransactionsScreen() {
         >
           Depósito
         </Chip>
-
         <Chip
           selected={filter === "transferencia"}
           onPress={() => setFilter("transferencia")}
@@ -222,15 +232,30 @@ export default function TransactionsScreen() {
         />
       )}
 
-      {selectedTransaction && (
+      {selectedTransactions.length > 0 && (
         <View style={[styles.footer, { borderTopColor: theme.colors.primary }]}>
           <Button mode="outlined" icon="delete" onPress={handleDelete}>
             Excluir
           </Button>
-
-          <Button mode="contained" icon="pencil" onPress={handleEdit}>
-            Editar
-          </Button>
+          {selectedTransactions.length > 1 && (
+            <Button
+              mode="outlined"
+              onPress={() => {
+                if (selectedTransactions.length === filteredTransactions.length) {
+                  setSelectedTransactions([]);
+                } else {
+                  setSelectedTransactions(filteredTransactions);
+                }
+              }}
+            >
+              {selectedTransactions.length === filteredTransactions.length ? "Limpar" : "Todas"}
+            </Button>
+          )}
+          {selectedTransactions.length === 1 && (
+            <Button mode="contained" icon="pencil" onPress={handleEdit}>
+              Editar
+            </Button>
+          )}
         </View>
       )}
 
@@ -241,46 +266,46 @@ export default function TransactionsScreen() {
 
 const styles = StyleSheet.create({
   screen: {
-    flex: 1,
+    flex: 1
   },
   title: {
     fontWeight: "bold",
-    fontSize: 20,
+    fontSize: 20
   },
   header: {
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   tabRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
-    marginVertical: 16,
+    marginVertical: 16
   },
   chip: {
-    borderRadius: 20,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "transparent",
+    borderColor: "transparent"
   },
   card: {
     marginVertical: 6,
-    borderRadius: 12,
+    borderRadius: 12
   },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "center"
   },
   footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 16,
     padding: 16,
-    marginBottom: 55,
+    marginBottom: 70,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
 });
