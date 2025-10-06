@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { registerUser } from '../../firebase/registerFunction';
+import Notification from '@/designSystem/Notification';
 
 export default function RegisterScreen() {
   const theme = useTheme();
@@ -22,6 +23,10 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'error' | 'success' | 'info';
+  } | null>(null);
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password) {
@@ -36,7 +41,19 @@ export default function RegisterScreen() {
       router.replace('/login');
     } catch (err: any) {
       console.log(err);
-      alert('Erro ao cadastrar usuário');
+      let msg = 'Não foi possível cadastrar o usuário.';
+      if (err.code === 'auth/weak-password') {
+        msg = 'A senha deve ter no mínimo 6 caracteres.';
+      }
+
+      if (err.code === 'auth/invalid-email') {
+        msg = 'Email inválido.';
+      }
+
+      if (err.code === 'auth/email-already-in-use') {
+        msg = 'Já existe uma conta cadastrada com este email.';
+      }
+      setNotification({ message: msg, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -46,6 +63,13 @@ export default function RegisterScreen() {
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onHide={() => setNotification(null)}
+        />
+      )}
       <View style={styles.formContainer}>
         <Text style={[styles.title, { color: theme.colors.primary }]}>
           Cadastro
