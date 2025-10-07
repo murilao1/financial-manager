@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Text, TextInput, Chip, useTheme } from 'react-native-paper';
-import Select from '@/designSystem/Select';
-import UploadField from '@/designSystem/UploadField';
-import { suggestCategories } from '@/helpers/categories';
 import Button from '@/designSystem/Button';
 import Notification from '@/designSystem/Notification';
-import { Link, useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { saveTransaction } from '@/firebase/saveTransactions';
-import { doc, getDoc } from 'firebase/firestore';
+import Select from '@/designSystem/Select';
+import UploadField from '@/designSystem/UploadField';
 import { db } from '@/firebase/firebaseConfig';
+import { saveTransaction } from '@/firebase/saveTransactions';
+import { suggestCategories } from '@/helpers/categories';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { doc, getDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Chip, Text, TextInput, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type TransactionsType = {
   id?: string;

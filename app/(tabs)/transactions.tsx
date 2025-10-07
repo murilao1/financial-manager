@@ -1,21 +1,11 @@
 import Button from "@/designSystem/Button";
 import Notification from "@/designSystem/Notification";
 import { useFocusEffect, useRouter } from "expo-router";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot
-} from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import React, { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  StyleSheet,
-  View,
-} from "react-native";
-import { Card, Chip, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from "react-native";
+import { Card, Chip, IconButton, Text, useTheme } from "react-native-paper";
+import { DatePickerModal } from "react-native-paper-dates";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../../firebase/firebaseConfig";
 
@@ -35,10 +25,9 @@ export default function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"todos" | "deposito" | "transferencia">("todos");
   const [selectedTransactions, setSelectedTransactions] = useState<Transaction[]>([]);
-  const [notification, setNotification] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-  } | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,9 +52,7 @@ export default function TransactionsScreen() {
               return {
                 id: d.id,
                 amount: docData.value,
-                date: docData.createdAt?.toDate
-                  ? docData.createdAt.toDate().toISOString()
-                  : new Date().toISOString(),
+                date: docData.createdAt?.toDate ? docData.createdAt.toDate().toISOString() : new Date().toISOString(),
                 category,
                 categoryLabel,
                 userId: docData.userId,
@@ -88,14 +75,21 @@ export default function TransactionsScreen() {
     }, [])
   );
 
-  const filteredTransactions =
-    filter === "todos"
-      ? transactions
-      : transactions.filter(
-        (t) =>
-          (filter === "deposito" && t.category === "entrada") ||
-          (filter === "transferencia" && t.category === "saida")
+  const filteredTransactions = transactions
+    .filter((t) =>
+      filter === "todos"
+        ? true
+        : (filter === "deposito" && t.category === "entrada") || (filter === "transferencia" && t.category === "saida")
+    )
+    .filter((t) => {
+      if (!selectedDate) return true;
+      const transactionDate = new Date(t.date);
+      return (
+        transactionDate.getFullYear() === selectedDate.getFullYear() &&
+        transactionDate.getMonth() === selectedDate.getMonth() &&
+        transactionDate.getDate() === selectedDate.getDate()
       );
+    });
 
   const toggleSelectTransaction = (item: Transaction) => {
     const exists = selectedTransactions.find((t) => t.id === item.id);
@@ -112,22 +106,17 @@ export default function TransactionsScreen() {
 
     return (
       <Card
-        style={[
-          styles.card,
-          { backgroundColor: isSelected ? theme.colors.secondaryContainer : theme.colors.background },
-        ]}
+        style={[styles.card, { backgroundColor: isSelected ? theme.colors.secondaryContainer : theme.colors.background }]}
         onPress={() => toggleSelectTransaction(item)}
+        accessibilityLabel={`Transação ${item.categoryLabel}`}
+        accessibilityHint={`Toca para ${isSelected ? "deselecionar" : "selecionar"} a transação`}
       >
         <Card.Content style={{ paddingVertical: 12 }}>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
             {new Date(item.date).toLocaleString("pt-BR")}
           </Text>
           <View style={styles.itemRow}>
-            <Chip
-              compact
-              mode="outlined"
-              textStyle={{ fontSize: 11, color: theme.colors.onSurfaceVariant }}
-            >
+            <Chip compact mode="outlined" textStyle={{ fontSize: 11, color: theme.colors.onSurfaceVariant }}>
               {item.categoryLabel.toUpperCase()}
             </Chip>
             <Text
@@ -147,27 +136,23 @@ export default function TransactionsScreen() {
   const handleDelete = async () => {
     if (selectedTransactions.length === 0) return;
 
-    Alert.alert(
-      "Excluir transações",
-      `Deseja realmente excluir ${selectedTransactions.length} transação(ões)?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await Promise.all(selectedTransactions.map((t) => deleteDoc(doc(db, "transacoes", t.id))));
-              setSelectedTransactions([]);
-              setNotification({ message: "Transações excluídas com sucesso!", type: "info" });
-            } catch (error) {
-              console.error("Erro ao excluir:", error);
-              setNotification({ message: "Erro ao excluir transações", type: "error" });
-            }
-          },
+    Alert.alert("Excluir transações", `Deseja realmente excluir ${selectedTransactions.length} transação(ões)?`, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await Promise.all(selectedTransactions.map((t) => deleteDoc(doc(db, "transacoes", t.id))));
+            setSelectedTransactions([]);
+            setNotification({ message: "Transações excluídas com sucesso!", type: "info" });
+          } catch (error) {
+            console.error("Erro ao excluir:", error);
+            setNotification({ message: "Erro ao excluir transações", type: "error" });
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleEdit = () => {
@@ -175,7 +160,7 @@ export default function TransactionsScreen() {
     const transaction = selectedTransactions[0];
     router.push({
       pathname: "/(tabs)/transaction-form",
-      params: { id: transaction.id },
+      params: { id: transaction.id, amount: String(transaction.amount), category: transaction.category, date: transaction.date },
     });
   };
 
@@ -187,7 +172,28 @@ export default function TransactionsScreen() {
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
           Transações
         </Text>
+        <IconButton
+          icon="calendar"
+          size={26}
+          onPress={() => setShowDatePicker(true)}
+          iconColor={theme.colors.primary}
+          style={{ position: "absolute", right: 12 }}
+          accessibilityLabel="Selecionar data"
+          accessibilityHint="Abre o calendário para filtrar transações por data"
+        />
       </View>
+
+      <DatePickerModal
+        locale="pt"
+        mode="single"
+        visible={showDatePicker}
+        date={selectedDate ?? new Date()}
+        onDismiss={() => setShowDatePicker(false)}
+        onConfirm={({ date }) => {
+          setShowDatePicker(false);
+          setSelectedDate(date ? date : null);
+        }}
+      />
 
       <View style={styles.tabRow}>
         <Chip
@@ -195,6 +201,7 @@ export default function TransactionsScreen() {
           onPress={() => setFilter("todos")}
           style={[styles.chip, filter === "todos" && { backgroundColor: theme.colors.primary }]}
           textStyle={filter === "todos" ? { color: theme.colors.onPrimary } : undefined}
+          accessibilityLabel="Filtrar todas transações"
         >
           Todos
         </Chip>
@@ -203,6 +210,7 @@ export default function TransactionsScreen() {
           onPress={() => setFilter("deposito")}
           style={[styles.chip, filter === "deposito" && { backgroundColor: theme.colors.primary }]}
           textStyle={filter === "deposito" ? { color: theme.colors.onPrimary } : undefined}
+          accessibilityLabel="Filtrar depósitos"
         >
           Depósito
         </Chip>
@@ -211,25 +219,27 @@ export default function TransactionsScreen() {
           onPress={() => setFilter("transferencia")}
           style={[styles.chip, filter === "transferencia" && { backgroundColor: theme.colors.primary }]}
           textStyle={filter === "transferencia" ? { color: theme.colors.onPrimary } : undefined}
+          accessibilityLabel="Filtrar transferências"
         >
           Transferência
         </Chip>
       </View>
 
+      {selectedDate && (
+        <Text style={{ textAlign: "center", color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+          {selectedDate.toLocaleDateString("pt-BR")}
+        </Text>
+      )}
+
       {filteredTransactions.length === 0 && !loading ? (
         <Text style={{ textAlign: "center", marginTop: 20 }}>Nenhuma transação</Text>
       ) : (
-        <FlatList
-          data={filteredTransactions}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 140, marginHorizontal: 16 }}
-        />
+        <FlatList data={filteredTransactions} keyExtractor={(item) => item.id} renderItem={renderItem} contentContainerStyle={{ paddingBottom: 140, marginHorizontal: 16 }} />
       )}
 
       {selectedTransactions.length > 0 && (
         <View style={[styles.footer, { borderTopColor: theme.colors.primary }]}>
-          <Button mode="outlined" icon="delete" onPress={handleDelete}>
+          <Button mode="outlined" icon="delete" onPress={handleDelete} accessibilityLabel="Excluir transações" accessibilityHint="Exclui as transações selecionadas">
             Excluir
           </Button>
           {selectedTransactions.length > 1 && (
@@ -242,12 +252,13 @@ export default function TransactionsScreen() {
                   setSelectedTransactions(filteredTransactions);
                 }
               }}
+              accessibilityLabel="Selecionar todas ou limpar seleção"
             >
               {selectedTransactions.length === filteredTransactions.length ? "Limpar" : "Todas"}
             </Button>
           )}
           {selectedTransactions.length === 1 && (
-            <Button mode="contained" icon="pencil" onPress={handleEdit}>
+            <Button mode="contained" icon="pencil" onPress={handleEdit} accessibilityLabel="Editar transação" accessibilityHint="Abre a tela para editar a transação selecionada">
               Editar
             </Button>
           )}
@@ -260,44 +271,39 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1
-  },
-  title: {
-    fontWeight: "bold",
-    fontSize: 20
-  },
+  screen: { flex: 1 },
+  title: { fontWeight: "bold", fontSize: 20 },
   header: {
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   tabRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
-    marginVertical: 16
+    marginVertical: 16,
   },
   chip: {
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "transparent"
+    borderColor: "transparent",
   },
   card: {
     marginVertical: 6,
-    borderRadius: 12
+    borderRadius: 12,
   },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 16,
     padding: 16,
     marginBottom: 70,
