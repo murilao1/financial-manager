@@ -116,6 +116,7 @@ export default function TransactionFormScreen({
           suggestedCategories.length > 0 ? suggestedCategories : ['Outros'],
       };
 
+      console.log('xxx transactionData', transactionData);
       await saveTransaction(transactionData, selectedTransaction?.id);
 
       setNotification({

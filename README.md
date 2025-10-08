@@ -87,7 +87,8 @@ O projeto está integrado ao **Firebase**, utilizando os seguintes serviços:
   ```json
   {
     "uid": "user_123",
-    "name": "João Silva",
+    "firstName": "João",
+    "lastName": "Silva",
     "email": "joao@email.com",
     "createdAt": "2025-10-07T12:00:00Z"
   }
@@ -96,14 +97,18 @@ O projeto está integrado ao **Firebase**, utilizando os seguintes serviços:
 - **transactions**  
   Registra as transações financeiras do usuário.  
   **Exemplo de documento:**
-  ```json
+  ```json 
   {
-    "id": "tx_456",
-    "userId": "user_123",
-    "type": "income",
-    "amount": 150.75,
-    "description": "Pagamento recebido",
-    "date": "2025-10-06T18:30:00Z"
+    "categories": ["wellness"],
+    "file": {
+      "name": "IMG-20251007-WA0009.jpg",
+      "size": 177611,
+      "type": "image/jpeg",
+      "uri": "file:///data/user/0/host.exp.exponent/cache/DocumentPicker/b115c891-5923-4458-be42-aca5987a7f7c.jpg"
+     },
+    "observation": "Academia",
+    "transaction": "saída",
+    "value": 150
   }
   ```
 
