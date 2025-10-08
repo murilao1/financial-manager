@@ -7,10 +7,11 @@ import { saveTransaction } from '@/firebase/saveTransactions';
 import { suggestCategories } from '@/helpers/categories';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 type TransactionsType = {
   id?: string;
@@ -26,15 +27,10 @@ type TransactionsType = {
   categories: string[];
 };
 
-type TransactionFormProps = {
-  selectedTransaction?: TransactionsType | null;
-};
-
-export default function TransactionFormScreen({
-  selectedTransaction,
-}: TransactionFormProps) {
+export default function TransactionFormScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [observation, setObservation] = useState('');
   const [transaction, setTransaction] = useState('');
   const [value, setValue] = useState('');
@@ -57,37 +53,43 @@ export default function TransactionFormScreen({
     { label: 'Transferência', value: 'saída' },
   ];
 
-  useEffect(() => {
-    const fetchTransaction = async () => {
-      if (!id) return;
-      try {
-        const docRef = doc(db, 'transacoes', id as string);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setTransaction(data.transaction || '');
-          setObservation(data.observation || '');
-          setFile(data.file || null);
-          setValueNumeric(data.value || 0);
-          setValue(
-            (data.value || 0).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })
-          );
-          setSuggestedCategories(data.categories || []);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchTransaction = async () => {
+        if (!id) {
+          handleClear();
+          return;
         }
-      } catch (error) {
-        console.error('Erro ao carregar transação:', error);
-        setNotification({
-          message: 'Erro ao carregar transação.',
-          type: 'error',
-        });
-      }
-    };
+        try {
+          const docRef = doc(db, 'transacoes', id as string);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data: any = snap.data();
+            setSelectedTransaction({ id: id, ...data });
+            setTransaction(data.transaction || '');
+            setObservation(data.observation || '');
+            setFile(data.file || null);
+            setValueNumeric(data.value || 0);
+            setValue(
+              (data.value || 0).toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })
+            );
+            setSuggestedCategories(data.categories || []);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar transação:', error);
+          setNotification({
+            message: 'Erro ao carregar transação.',
+            type: 'error',
+          });
+        }
+      };
 
-    fetchTransaction();
-  }, [id]);
+      fetchTransaction();
+    }, [id])
+  );
 
   const handleSave = async () => {
     try {
@@ -115,8 +117,6 @@ export default function TransactionFormScreen({
         categories:
           suggestedCategories.length > 0 ? suggestedCategories : ['Outros'],
       };
-
-      console.log('xxx transactionData', transactionData);
       await saveTransaction(transactionData, selectedTransaction?.id);
 
       setNotification({
@@ -133,11 +133,13 @@ export default function TransactionFormScreen({
   };
 
   const handleClear = () => {
+    router.setParams({ id: undefined });
     setTransaction('');
     setValue('');
     setObservation('');
     setFile(null);
     setSuggestedCategories([]);
+    setSelectedTransaction(null);
   };
 
   const handleObservationChange = (text: string) => {
